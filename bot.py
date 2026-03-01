@@ -238,15 +238,18 @@ async def add_media_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
-
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("addmedia", add_media_help))
     app.add_handler(CallbackQueryHandler(check_callback, pattern=r"^check:"))
 
     logger.info("Bot is running…")
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
-
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=int(os.environ.get("PORT", 10000)),
+        webhook_url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{BOT_TOKEN}",
+        secret_token="your-secret-string-here",
+    )
 
 if __name__ == "__main__":
-
     main()
+
