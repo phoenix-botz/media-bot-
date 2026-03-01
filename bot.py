@@ -244,14 +244,16 @@ def main():
 
     logger.info("Bot is running…")
     app.run_webhook(
-        listen="0.0.0.0",
-        port=int(os.environ.get("PORT", 10000)),
-        webhook_url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{BOT_TOKEN}",
-        secret_token="your-secret-string-here",
+    listen="0.0.0.0",
+    port=int(os.environ.get("PORT", 10000)),
+    url_path=BOT_TOKEN,
+    webhook_url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{BOT_TOKEN}",
+    secret_token="your-secret-string-here",
     )
 
 if __name__ == "__main__":
     import asyncio
     asyncio.set_event_loop(asyncio.new_event_loop())
     main()
+
 
