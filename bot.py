@@ -13,7 +13,7 @@ How it works:
 - If not joined → bot tells them to join and provides join links
 - If joined → bot sends streaming/purchase links for that media
 """
-
+import os
 import logging
 import asyncio
 from telegram import (
@@ -34,7 +34,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 # ─────────────────────────────────────────────
 #  CONFIG — Fill these in before running
 # ─────────────────────────────────────────────
-BOT_TOKEN = "8327160993:AAG6IoYcvFqIldTaffHM_QrLzuShQJABhd0"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
 # Your private media channel (where you post movies/shows/games)
 MEDIA_CHANNEL_ID = -1003618892531        # e.g. -1001234567890
@@ -248,4 +248,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
