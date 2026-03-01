@@ -49,35 +49,44 @@ NEWS_CHANNEL_USERNAME = "WorldViewEntertainment"     # without @
 #  Add entries here when you post new media.
 #  key = a short slug you'll use in the deep link
 # ─────────────────────────────────────────────
-MEDIA_DB = {
-    "dune2": {
-        "title": "Dune: Part Two (2024)",
-        "type": "Movie",
-        "poster": "https://i.imgur.com/example.jpg",  # optional
-        "links": [
-            ("🎬 Stream on Max", "https://www.max.com"),
-            ("🍿 Stream on Prime Video", "https://www.amazon.com/primevideo"),
-            ("🛒 Buy on Apple TV", "https://tv.apple.com"),
-            ("🛒 Buy on Google Play", "https://play.google.com/store/movies"),
-        ],
-    },
-    "shogun": {
-        "title": "Shōgun – Season 1 (2024)",
-        "type": "TV Show",
-        "links": [
-            ("🎬 Stream on Hulu", "https://www.hulu.com"),
-            ("🛒 Buy on Apple TV", "https://tv.apple.com"),
-        ],
-    },
-    "ff7rebirth": {
-        "title": "Final Fantasy VII Rebirth (2024)",
-        "type": "Game",
-        "links": [
-            ("🎮 Buy on PlayStation Store", "https://store.playstation.com"),
-            ("🖥️ Buy on Steam", "https://store.steampowered.com"),
-        ],
-    },
-}
+import gspread
+from google.oauth2.service_account import Credentials
+
+SHEET_ID = "your_google_sheet_id_here"
+
+def get_media_from_sheet(slug: str):
+    """Fetch media info from Google Sheet by slug."""
+    try:
+        import json
+        from google.oauth2.service_account import Credentials
+        
+        creds_json = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
+        creds = Credentials.from_service_account_info(
+            creds_json,
+            scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"]
+        )
+        gc = gspread.authorize(creds)
+        sheet = gc.open_by_key(SHEET_ID).sheet1
+        rows = sheet.get_all_records()
+
+        links = []
+        title = None
+        media_type = None
+
+        for row in rows:
+            if row["slug"].lower() == slug.lower():
+                title = row["title"]
+                media_type = row["type"]
+                links.append((row["link_label"], row["link_url"]))
+
+        if not title:
+            return None
+
+        return {"title": title, "type": media_type, "links": links}
+
+    except Exception as e:
+        logger.error(f"Sheet error: {e}")
+        return None
 
 # ─────────────────────────────────────────────
 #  HELPERS
@@ -108,7 +117,7 @@ def build_join_keyboard(media_slug: str) -> InlineKeyboardMarkup:
 
 def build_links_keyboard(media_slug: str) -> InlineKeyboardMarkup:
     """Keyboard with streaming/purchase links."""
-    media = MEDIA_DB.get(media_slug)
+    media = get_media_from_sheet(media_slug)
     if not media:
         return None
     buttons = [[InlineKeyboardButton(label, url=url)] for label, url in media["links"]]
@@ -134,7 +143,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     media_slug = args[0].lower()
-    media = MEDIA_DB.get(media_slug)
+    media = get_media_from_sheet(media_slug)
 
     if not media:
         await update.message.reply_text("❌ Media not found. It may have been removed.")
@@ -168,7 +177,7 @@ async def check_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     _, media_slug = query.data.split(":", 1)
     user = query.from_user
-    media = MEDIA_DB.get(media_slug)
+    media = get_media_from_sheet(media_slug)
 
     if not media:
         await query.edit_message_text("❌ Media not found.")
@@ -255,5 +264,6 @@ if __name__ == "__main__":
     import asyncio
     asyncio.set_event_loop(asyncio.new_event_loop())
     main()
+
 
 
