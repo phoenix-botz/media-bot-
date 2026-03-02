@@ -392,7 +392,6 @@ def main():
     app.add_handler(CommandHandler("debug", handle_debug))
     app.add_handler(CallbackQueryHandler(handle_check_callback, pattern=r"^check:"))
     app.job_queue.run_repeating(keep_alive, interval=600, first=10)
-```
 
     # This pings your own server every 10 minutes, keeping it awake so there's no delay for your users.
     
@@ -420,4 +419,5 @@ def main():
 if __name__ == "__main__":
     asyncio.set_event_loop(asyncio.new_event_loop())
     main()
+
 
