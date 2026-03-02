@@ -41,7 +41,9 @@ from telegram.ext import (
     CommandHandler,
     CallbackQueryHandler,
     ContextTypes,
+    JobQueue,
 )
+
 
 
 # ══════════════════════════════════════════════════════════════
@@ -367,6 +369,14 @@ async def send_links(message, media: dict, media_slug: str):
         reply_markup=links_keyboard(media_slug),
     )
 
+async def keep_alive(context: ContextTypes.DEFAULT_TYPE):
+    """Pings the server every 10 minutes to prevent Render from sleeping."""
+    import httpx
+    url = f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}"
+    async with httpx.AsyncClient() as client:
+        await client.get(url)
+    logger.info("Keep-alive ping sent")
+
 
 # ══════════════════════════════════════════════════════════════
 #  MAIN
@@ -381,6 +391,18 @@ def main():
     app.add_handler(CommandHandler("start", handle_start))
     app.add_handler(CommandHandler("debug", handle_debug))
     app.add_handler(CallbackQueryHandler(handle_check_callback, pattern=r"^check:"))
+    app.job_queue.run_repeating(keep_alive, interval=600, first=10)
+```
+
+    # This pings your own server every 10 minutes, keeping it awake so there's no delay for your users.
+    
+    # Also update your `requirements.txt` to make sure the job queue works:
+    # ```
+    # python-telegram-bot[webhooks,job-queue]==21.5
+    # httpx==0.27.2
+    # uvicorn==0.29.0
+    # gspread==6.1.2
+    # google-auth==2.29.0
 
     logger.info("Bot is starting…")
 
@@ -398,3 +420,4 @@ def main():
 if __name__ == "__main__":
     asyncio.set_event_loop(asyncio.new_event_loop())
     main()
+
